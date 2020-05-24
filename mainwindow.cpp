@@ -6,8 +6,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-
     ui->statusbar->showMessage("Start Program",4000);
 
     //Menu
@@ -50,7 +48,15 @@ void MainWindow::open_Multiple_Action(){//Image open
             QString str = filenameList.at(i);
             image[i].load(str);
         }
+        QPixmap temp;
+        temp = QPixmap::fromImage(image[0]);
+        const int h = ui->label_Display->height();
+        const int w = ui->label_Display->width();
+        imgPixmap1 = QPixmap::fromImage(image[0]);
+        image1 = image[0];
+        ui->label_Display->setPixmap(temp.scaled(w, h, Qt::KeepAspectRatio));//image display with keeping Original Ratio
     }
+
 }
 
 void MainWindow::open_Action()//Image open
@@ -61,13 +67,7 @@ void MainWindow::open_Action()//Image open
     QString filePath = dlg.getOpenFileName(this, "Load Image", "", "Image Files (*.png *.jpg *.bmp *.raw)");
     QString fileName = filePath.section("/", -1);
 
-
-
-
     //Read JPG
-
-
-
    /* QByteArray arr1;
     uchar* data1;
     int size = arr1.size();
@@ -114,7 +114,6 @@ void MainWindow::open_Action()//Image open
     ui->label_ResultDisplay->setPixmap(temp.scaled(w, h, Qt::KeepAspectRatio));
     ui->label_Display->setPixmap(imgPixmap1.scaled(w, h, Qt::KeepAspectRatio));//image display with keeping Original Ratio
 
-    //ui->label_Display->setScaledContents(true);
 }
 
 
@@ -128,22 +127,7 @@ void MainWindow::project_Action()
 
     prj1 = new QImage(width, height, QImage::Format_ARGB32);
 
-   /* for(int i = 0; i < width/2; ++i){
-        for(int j = 0; j < height; ++j){
-            int a = f*abs(atan2((double)width/2-i, f));
-            int b = f*j/sqrt(pow(i,2)+pow(f,2));
-            prj->setPixel(width/2-a,b, image1.pixel(i,j));
-
-        }
-    }
-    for(int i = width/2; i < width; ++i){
-        for(int j = 0; j < height; ++j){
-           int  a = f*abs(atan2((double)i, f));
-           int b = f*j/sqrt(pow(i,2)+pow(f,2));
-           prj->setPixel(a,b, image1.pixel(i,j));
-        }
-    }*/
-
+    //Forward Warping
     for(int i = 0; i < width; ++i){
            for(int j = 0; j < height; ++j){
                 //int theta = atan2((double)(i-(width/2)), f);
@@ -154,25 +138,6 @@ void MainWindow::project_Action()
 
            }
      }
-  /*  for(int i = 0; i < width; ++i){
-         //qDebug() <<  f*(atan2((double)(i-(width/2)), f))+(width/2);
-            for(int j = 0; j < height; ++j){
-                double a = f*(atan2((double)(i-(width/2)), f))+(width/2);
-                int a_1 = a;
-                if((a - a_1> 0 && (a-a_1) <0.5)){
-                           qDebug() <<"A" << a-a_1;
-                }
-                int a_2 = a+1;
-
-                int b = f*(j-height/2)/sqrt(pow(i-width/2,2)+pow(f,2)) + height/2;
-                if(i == 0){
-                    //qDebug() << "h: "<< f*(j-height/2)/sqrt(pow(i-width/2,2)+pow(f,2)) + height/2;
-                }
-               // qDebug() <<  f*(atan2((double)(i-(width/2)), f))+(width/2);
-                prj1->setPixel(a,b, image1.pixel(i,j));
-
-            }
-     }*/
     prj1->save("D:\\projection.jpg","JPG");
     //Draw Result
      QPixmap temp;
@@ -180,19 +145,14 @@ void MainWindow::project_Action()
      int w =  ui->label_ResultDisplay->width();//get display width
      int h = ui->label_ResultDisplay->height();//get display height
      ui->label_ResultDisplay->setPixmap(temp.scaled(w, h, Qt::KeepAspectRatio));
-
-
-
-
-
 }
 
-void MainWindow::Myinterpolation(){
+void MainWindow::Myinterpolation(){//Inverse warping & Bilinear interpolation
     int width = image1.width();
     int height = image1.height();
     double f = ui->focal_length->value();
 
-      //Interpolation
+    //Interpolation
     QImage* interImg = new QImage(width, height, QImage::Format_ARGB32);
     for(int i = 0; i < width; ++i){
             for(int j = 0; j < height; ++j){
@@ -207,15 +167,15 @@ void MainWindow::Myinterpolation(){
                     //qDebug() << a << b;
                     continue;
                 }
-               // double a = f*(atan2((double)(i-(width/2)), f))+(width/2);
-              // double b = f*(j-height/2)/sqrt(pow(i-width/2,2)+pow(f,2)) + height/2;
-                QColor inter_Color = Bilinear(a, b);
+
+                QColor inter_Color = Bilinear(a, b);// Call Bilinear interpolation function
                 //interImg->setPixelColor(a,b, inter_Color);
                 interImg->setPixelColor(i,j, inter_Color);
             }
      }
     int w =  ui->label_ResultDisplay->width();//get display width
     int h = ui->label_ResultDisplay->height();//get display height
+
     //Draw Result
      QPixmap interResult;
      interImg->save("D:\\inter.jpg","JPG");
@@ -239,19 +199,15 @@ QColor MainWindow::Bilinear(double x, double y){
     QRgb a2 = image1.pixel(x+1, y);
     QRgb a3 = image1.pixel(x, y+1);
     QRgb a4 = image1.pixel(x+1, y+1);
-
-
-
     QRgb res;
     res =  qRgb(qRed(a1)+qRed(a2),qGreen(a1),qBlue(a1));*/
 
-
   //  QVector<QRgb> v = image1.colorTable();// get color table
-    int xb = (int)x;
+    int xb = (int)x;//integer only
     int yb = (int)y;
 
-    if(yb> image1.height()-2 || xb>image1.width()-2){
-        QColor res = image1.pixelColor(xb, yb);
+    if(yb> image1.height()-2 || xb>image1.width()-2){//if Out of range
+        QColor res = image1.pixelColor(xb, yb);//return padding value
         return res;
     }
     QColor a1 = image1.pixelColor(xb, yb);
