@@ -21,12 +21,16 @@
     public:
         MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
-        QPixmap imgPixmap1;
-        QImage image1;
+        QPixmap sourcePixmap;
+        QImage sourceImage;
+        QPixmap resultPixmap;
+        QImage resultImage;
         QByteArray arr1;
         QImage* prj1;//Projection Image
         QImage image[6];
         int currentImage = 0;
+
+        int Threshold = 14200;
     private slots:
         void open_Action();//menu open button
         void open_Multiple_Action();//open Multiple image
@@ -42,11 +46,15 @@
 
         void on_InterpolationButton_clicked();
 
+        void on_nextButton_clicked();
 
+        void on_prevButton_clicked();
 
-        void on_pushButton_2_clicked();
+        void on_detectButton_clicked();
 
-        void on_pushButton_clicked();
+        void on_thresholdSlider_valueChanged(int value);
+
+        QRgb pixelHarrisMeasure(const QImage &lx2,const QImage &ly2,const QImage &lxy, int x, int y);
 
     private:
         Ui::MainWindow *ui;
